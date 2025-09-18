@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, ReactNode } from "react";
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { Routes, Route, NavLink, HashRouter } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -1155,7 +1155,7 @@ const ProgressoPage = () => {
 // ----------------------------------------------
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className='min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800'>
         <Nav />
         <Routes>
@@ -1171,6 +1171,6 @@ export default function App() {
           fatoração, potenciação e divisão com resto.
         </footer>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
