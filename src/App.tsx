@@ -70,9 +70,33 @@ const divisibilityInfo = (n: number) => {
     by2: n % 2 === 0,
     by3: sumDigits % 3 === 0,
     by5: n % 5 === 0,
+    by6: n % 6 === 0,
     by10: n % 10 === 0,
   };
 };
+
+const normalizeFactorsInput = (text: string) => {
+  const cleaned = String(text)
+    .toLowerCase()
+    .replace(/[×xX*·]/g, " ") // x, ×, *, ponto meio
+    .replace(/[;,]/g, " ") // vírgulas e ;
+    .replace(/\s+/g, " ") // múltiplos espaços
+    .trim();
+  if (!cleaned) return [];
+  return cleaned
+    .split(" ")
+    .map((t) => Number(t))
+    .filter((n) => Number.isFinite(n));
+};
+
+const multisetEqual = (a: number[], b: number[]) => {
+  if (a.length !== b.length) return false;
+  const aa = [...a].sort((x, y) => x - y);
+  const bb = [...b].sort((x, y) => x - y);
+  return aa.every((v, i) => v === bb[i]);
+};
+
+const productOf = (arr: number[]) => arr.reduce((acc, v) => acc * v, 1);
 
 // ----------------------------------------------
 // Persistência (localStorage) — rastreamento simples
@@ -263,6 +287,7 @@ const ConceitosPage = () => {
               <Badge>2: {info.by2 ? "Sim" : "Não"}</Badge>
               <Badge>3: {info.by3 ? "Sim" : "Não"}</Badge>
               <Badge>5: {info.by5 ? "Sim" : "Não"}</Badge>
+              <Badge>6: {info.by6 ? "Sim" : "Não"}</Badge>
               <Badge>10: {info.by10 ? "Sim" : "Não"}</Badge>
             </div>
           </div>
@@ -271,8 +296,10 @@ const ConceitosPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className='text-xs text-slate-600'
           >
-            Dica: por 3 → some os algarismos. Por 5 → termina em 0 ou 5. Por 2 →
-            é par.
+            Dica: Por 2 → é par. <br />
+            Por 3 → some os algarismos e veja se são divisíveis por 3.
+            <br />
+            Por 5 → termina em 0 ou 5.{" "}
           </motion.div>
         </div>
       </Card>
@@ -286,7 +313,8 @@ const ConceitosPage = () => {
         <div className='space-y-3'>
           <p className='text-sm text-slate-700'>
             <strong>Primos</strong> são números com apenas dois divisores: 1 e
-            ele mesmo. 1 não é primo; 2 é o único par primo.
+            ele mesmo. <strong>Importante:</strong> 1 não é primo e 2 é o único
+            par primo.
           </p>
           <div className='flex items-center gap-2'>
             <input
@@ -313,7 +341,7 @@ const ConceitosPage = () => {
         />
         <p className='text-sm text-slate-700'>
           Ex.: 12 = 2 × 2 × 3. Os números primos são os “blocos de construção”
-          dos naturais.
+          dos números naturais.
         </p>
         <FactorizacaoMini />
       </Card>
@@ -490,7 +518,13 @@ const PrimeHunt = () => {
         ))}
       </div>
       <div className='text-sm text-slate-700'>
-        Acertos: {correctCount} / {totalPrimes}
+        Acertos:{" "}
+        <strong
+          className={correctCount === totalPrimes ? "text-emerald-600" : ""}
+        >
+          {correctCount}
+        </strong>{" "}
+        / {totalPrimes}
       </div>
     </div>
   );
@@ -608,7 +642,7 @@ const FatoracaoPage = () => {
         title='Fatoração em Primos (Animada)'
         subtitle='Divida repetidamente pelo menor primo possível.'
       />
-      <div className='flex items-center gap-2'>
+      <div className='flex items-center gap-2 flex-wrap'>
         <input
           type='number'
           className='border rounded-xl px-3 py-2 w-40'
@@ -620,14 +654,14 @@ const FatoracaoPage = () => {
         </Button>
         {!playing ? (
           <Button
-            className='bg-indigo-600 text-white border-indigo-600'
+            className='bg-indigo-600 text-zinc-800 border-indigo-600 border'
             onClick={startAuto}
           >
             Auto
           </Button>
         ) : (
           <Button
-            className='bg-rose-600 text-white border-rose-600'
+            className='bg-rose-600 text-zinc-800 border-rose-600'
             onClick={stopAuto}
           >
             Parar
@@ -711,7 +745,7 @@ const DivisaoPage = () => {
         title='Divisão Animada'
         subtitle='Forme grupos do tamanho do divisor e observe o resto.'
       />
-      <div className='flex items-center gap-2'>
+      <div className='flex items-center gap-2 flex-wrap'>
         <input
           type='number'
           className='border rounded-xl px-3 py-2 w-32'
@@ -731,8 +765,8 @@ const DivisaoPage = () => {
 
       <div className='space-y-2'>
         <p className='text-sm text-slate-700'>
-          Grupos completos: {shown} | Resto:{" "}
-          {Math.max(0, dividendo - shown * divisor)}
+          Grupos completos: <strong>{shown}</strong> | Resto:{" "}
+          <strong>{Math.max(0, dividendo - shown * divisor)}</strong>
         </p>
         <div className='flex flex-wrap gap-4'>
           {Array.from({ length: shown }).map((_, gi) => (
@@ -780,8 +814,8 @@ const generateExercise = () => {
       const correct = n % by === 0;
       return {
         type,
-        prompt: `O número ${n} é divisível por ${by}? (sim/não)`,
-        answer: correct ? "sim" : "não",
+        prompt: `O número ${n} é divisível por ${by}? (S/N)`,
+        answer: correct ? "S" : "N",
         explain:
           by === 3
             ? `Soma dos algarismos de ${n} = ${String(n)
@@ -799,7 +833,7 @@ const generateExercise = () => {
       const n = candidates[Math.floor(Math.random() * candidates.length)];
       return {
         type,
-        prompt: `${n} é primo? (sim/não)`,
+        prompt: `${n} é primo? (S/N)`,
         answer: isPrime(n) ? "sim" : "não",
         explain: isPrime(n)
           ? `${n} tem apenas dois divisores (1 e ele mesmo).`
@@ -808,9 +842,12 @@ const generateExercise = () => {
     }
     case "fatoracao": {
       const n = [12, 18, 20, 24, 36, 45, 50, 60][Math.floor(Math.random() * 8)];
-      const fac = primeFactors(n).join(" × ");
+      const expectedFactors = primeFactors(n);
+      const fac = expectedFactors.join(" × ");
       return {
         type,
+        value: n, // usado para validar produto
+        expected: expectedFactors, // multiconjunto esperado (ordem livre)
         prompt: `Fatore ${n} em primos.`,
         answer: fac,
         explain: `Fatoração: ${fac}.`,
@@ -821,12 +858,12 @@ const generateExercise = () => {
       const exp = [2, 3, 4][Math.floor(Math.random() * 3)];
       return {
         type,
-        prompt: `Calcule ${base}^${exp}.`,
+        prompt: `Calcule ${base}^${exp} (${base} elevado a ${exp}).`,
         answer: String(Math.pow(base, exp)),
-        explain: `${base} multiplicado por si ${exp} vezes = ${Math.pow(
+        explain: `${base} multiplicado por si mesmo ${exp} vezes = ${Math.pow(
           base,
           exp
-        )}.`,
+        )}`,
       };
     }
     case "resto": {
@@ -853,7 +890,7 @@ const generateExercise = () => {
 
 const ExerciciosPage = () => {
   const [round, setRound] = useState(1);
-  const [ex, setEx] = useState(generateExercise());
+  const [ex, setEx] = useState<any>(generateExercise());
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<any>(null);
   const [score, setScore] = useState(0);
@@ -869,9 +906,39 @@ const ExerciciosPage = () => {
   }, [round]);
 
   const submit = () => {
-    const normalized = input.trim().toLowerCase();
-    const correct = normalized === ex.answer.toLowerCase();
-    setFeedback({ correct, explain: ex.explain, expected: ex.answer });
+    let correct = false;
+    let explain = ex.explain;
+    let expected = ex.answer;
+
+    if (ex.type === "fatoracao" && ex.value) {
+      const factors = normalizeFactorsInput(input);
+
+      if (factors.length === 0) {
+        explain = "Formato aceito: 2x2x3, 2 2 3, 2,2,3 ou 2×2×3.";
+      } else if (!factors.every((k) => Number.isInteger(k) && k >= 2)) {
+        explain = "Use apenas inteiros ≥ 2.";
+      } else if (factors.some((k) => !isPrime(k))) {
+        const nonPrimes = factors.filter((k) => !isPrime(k));
+        explain = `Nem todos os fatores são primos (${nonPrimes.join(
+          ", "
+        )}). Dica: fatorar compostos (ex.: 6 = 2x3).`;
+      } else if (productOf(factors) !== ex.value) {
+        const prod = productOf(factors);
+        explain = `O produto dos fatores digitados é ${prod}, mas deve ser ${ex.value}.`;
+      } else {
+        const expectedFactors = ex.expected || primeFactors(ex.value);
+        correct = multisetEqual(factors, expectedFactors);
+        expected = expectedFactors.join(" × ");
+        explain = correct
+          ? `Perfeito! ${ex.value} = ${expected}.`
+          : `Revise: ${ex.value} = ${expected}.`;
+      }
+    } else {
+      const normalized = input.trim().toLowerCase();
+      correct = normalized === ex.answer.toLowerCase();
+    }
+
+    setFeedback({ correct, explain, expected });
 
     const s = statsRef.current;
     s.totalQuestions += 1;
@@ -927,7 +994,7 @@ const ExerciciosPage = () => {
             onKeyDown={(e) => e.key === "Enter" && submit()}
           />
           <Button
-            className='bg-indigo-600 text-white border-indigo-600'
+            className='bg-indigo-600 text-zinc-800 border-indigo-600'
             onClick={submit}
           >
             Responder
@@ -951,7 +1018,9 @@ const ExerciciosPage = () => {
               <div>
                 {feedback.correct
                   ? "Correto!"
-                  : `Incorreto. Resposta esperada: ${feedback.expected}.`}
+                  : `Incorreto. Resposta esperada: ${String(
+                      feedback.expected
+                    ).toUpperCase()}.`}
                 <div className='text-slate-600 mt-1'>{feedback.explain}</div>
               </div>
             </motion.div>
